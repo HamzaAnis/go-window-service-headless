@@ -7,11 +7,12 @@ import (
 	"log"
 	"net"
 	"net/url"
+	"strconv"
 )
 
 type Config struct {
 	URL    string `json:"url"`
-	Ports  string `json:"ports"`
+	Ports  int64  `json:"ports"`
 	APIKey string `json:"apiKey"`
 }
 
@@ -30,7 +31,7 @@ func buildURL(c Config) string {
 	if err != nil {
 		log.Fatal("Malformed URL: ", err.Error())
 	}
-	baseUrlWithAddr := net.JoinHostPort(baseUrl.Hostname(), "8000")
+	baseUrlWithAddr := net.JoinHostPort(baseUrl.Hostname(), strconv.FormatInt(c.Ports, 10))
 
 	// Parameters
 	params := url.Values{}
