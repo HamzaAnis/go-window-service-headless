@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/url"
 	"strconv"
-	"time"
 
 	"github.com/parnurzeal/gorequest"
 )
@@ -67,19 +66,89 @@ func buildURL(c Config) string {
 	return newQuery.String()
 }
 
+func compareResponse(a Response, b Response) bool {
+	if a.Direction != b.Direction || a.Password != b.Password || a.Port != b.Port || a.Server != b.Server || a.SourcePort != b.SourcePort || a.Target != b.Target || a.TargetPort != b.TargetPort || a.User != b.User {
+		return false
+	}
+	return true
+}
+
+func getUniqueNodes(a []Response, b []Response) {
+	result := make([]Response, 0, 11)
+	for _, v := range a {
+		exist := false
+		for _, w := range b {
+			if compareResponse(v, w) {
+				exist = true
+				break
+			}
+		}
+		if exist {
+			result = append(result, v)
+		}
+	}
+	fmt.Println(result) // [F5 F7 C6 G5]
+}
+func getDistinctNodes(a []Response, b []Response) []Response {
+	result := make([]Response, 0, 11)
+	for _, v := range a {
+		exist := false
+		for _, w := range b {
+			if compareResponse(v, w) {
+				exist = true
+			}
+		}
+		if !exist {
+			result = append(result, v)
+		}
+	}
+	return result
+}
+
+func getResponse(url string) []Response {
+	log.Printf("Processing %v\n", url)
+
+	var getRestResponse []Response
+
+	request := gorequest.New()
+	_, body, _ := request.Get(url).EndStruct(&getRestResponse)
+	log.Printf("Body:\n%v\n", body)
+	return getRestResponse
+}
+func getDistinctNodes1(a []string, b []string) {
+	result := make([]string, 0, 11)
+	for _, v := range a {
+		exist := false
+		for _, w := range b {
+			if v == w {
+				exist = true
+			}
+		}
+		if !exist {
+			result = append(result, v)
+		}
+	}
+	fmt.Println(result) // [F5 F7 C6 G5]
+}
+func openConnections(nodes []Response) {
+
+}
+
 // Main function
 func main() {
-	c := loadConfig("config.json")
+	// c := loadConfig("config.json")
 
-	url := buildURL(c)
-	for {
-		log.Printf("Processing %v\n", url)
+	// url := buildURL(c)
+	// startNodes := getResponse(url)
+	// openConnections(startNodes)
+	// for {
+	// 	newNodes := getResponse(url)
+	// 	distinctNodes := getDistinctNodes(newNodes, startNodes)
+	// 	openConnections(distinctNodes)
 
-		var getRestResponse []Response
+	// 	closedNodes := getDistinctNodes(startNodes, newNodes)
+	// 	log.Println("Waiting for 1 minute till next request")
+	// 	time.Sleep(time.Minute * 1)
+	// }
 
-		request := gorequest.New()
-		_, body, _ := request.Get(url).EndStruct(&getRestResponse)
-		log.Printf("Body:\n%v\n", body)
-		time.Sleep(time.Minute * 1)
-	}
 }
