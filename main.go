@@ -117,13 +117,13 @@ func getResponse(url string) []Response {
 	return getRestResponse
 }
 
-func openConnections(nodes []Response) {
+func openTunnels(nodes []Response) {
 	if len(nodes) > 0 {
 
 	}
 }
 
-func closeConnections(nodes []Response) {
+func closeTunnels(nodes []Response) {
 	if len(nodes) > 0 {
 
 	}
@@ -135,17 +135,17 @@ func main() {
 
 	url := buildURL(c)
 	startNodes := getResponse(url)
-	openConnections(startNodes)
+	openTunnels(startNodes)
 	for {
 		newNodes := getResponse(url)
 
 		// Getting the nodes that are new
 		distinctNodes := getDistinctNodes(newNodes, startNodes)
-		openConnections(distinctNodes)
+		openTunnels(distinctNodes)
 
 		// Getting the nodes that are not present
 		closedNodes := getDistinctNodes(startNodes, newNodes)
-		closeConnections(closedNodes)
+		closeTunnels(closedNodes)
 
 		// Updating start nodes to the new nodes
 		startNodes = newNodes
