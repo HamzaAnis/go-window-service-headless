@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/parnurzeal/gorequest"
 )
@@ -115,40 +116,42 @@ func getResponse(url string) []Response {
 	log.Printf("Body:\n%v\n", body)
 	return getRestResponse
 }
-func getDistinctNodes1(a []string, b []string) {
-	result := make([]string, 0, 11)
-	for _, v := range a {
-		exist := false
-		for _, w := range b {
-			if v == w {
-				exist = true
-			}
-		}
-		if !exist {
-			result = append(result, v)
-		}
-	}
-	fmt.Println(result) // [F5 F7 C6 G5]
-}
-func openConnections(nodes []Response) {
 
+func openConnections(nodes []Response) {
+	if len(nodes) > 0 {
+
+	}
+}
+
+func closeConnections(nodes []Response) {
+	if len(nodes) > 0 {
+
+	}
 }
 
 // Main function
 func main() {
-	// c := loadConfig("config.json")
+	c := loadConfig("config.json")
 
-	// url := buildURL(c)
-	// startNodes := getResponse(url)
-	// openConnections(startNodes)
-	// for {
-	// 	newNodes := getResponse(url)
-	// 	distinctNodes := getDistinctNodes(newNodes, startNodes)
-	// 	openConnections(distinctNodes)
+	url := buildURL(c)
+	startNodes := getResponse(url)
+	openConnections(startNodes)
+	for {
+		newNodes := getResponse(url)
 
-	// 	closedNodes := getDistinctNodes(startNodes, newNodes)
-	// 	log.Println("Waiting for 1 minute till next request")
-	// 	time.Sleep(time.Minute * 1)
-	// }
+		// Getting the nodes that are new
+		distinctNodes := getDistinctNodes(newNodes, startNodes)
+		openConnections(distinctNodes)
+
+		// Getting the nodes that are not present
+		closedNodes := getDistinctNodes(startNodes, newNodes)
+		closeConnections(closedNodes)
+
+		// Updating start nodes to the new nodes
+		startNodes = newNodes
+
+		log.Println("Waiting for 1 minute till next request")
+		time.Sleep(time.Minute * 1)
+	}
 
 }
