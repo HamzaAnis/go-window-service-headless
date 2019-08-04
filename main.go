@@ -13,14 +13,14 @@ import (
 	"github.com/parnurzeal/gorequest"
 )
 
-// The struct to store the config variables
+// Config store the config variables
 type Config struct {
 	URL    string `json:"url"`
 	Ports  int64  `json:"ports"`
 	APIKey string `json:"apiKey"`
 }
 
-// To store the response of the endpoint
+// Response store the response of the endpoint
 type Response struct {
 	Server     string `json:"server"`
 	Port       int64  `json:"port"`
@@ -32,7 +32,11 @@ type Response struct {
 	SourcePort int64  `json:"sourcePort"`
 }
 
-// This method loads reads the configuration file
+func (r *Response) print() {
+	log.Printf("\nServer: %v\nPort: %v\nUser: %v\nPassword: %v\nDirection: %v\nTarget: %v\nTargetPort: %v\nSourcePort: %v\n\n", r.Server, r.Port, r.User, r.Password, r.Direction, r.Target, r.TargetPort, r.SourcePort)
+}
+
+// loadConfig loads reads the configuration file
 func loadConfig(configFile string) Config {
 	log.Printf("Loading config file %v\n", configFile)
 	cnfg, err := ioutil.ReadFile(configFile)
@@ -44,7 +48,7 @@ func loadConfig(configFile string) Config {
 	return c
 }
 
-// This builds the url from the config file
+// buildURL builds the url from the config file
 func buildURL(c Config) string {
 	baseURL, err := url.Parse(c.URL)
 	if err != nil {
@@ -67,6 +71,7 @@ func buildURL(c Config) string {
 	return newQuery.String()
 }
 
+// compareResponse the two responses
 func compareResponse(a Response, b Response) bool {
 	if a.Direction != b.Direction || a.Password != b.Password || a.Port != b.Port || a.Server != b.Server || a.SourcePort != b.SourcePort || a.Target != b.Target || a.TargetPort != b.TargetPort || a.User != b.User {
 		return false
@@ -74,6 +79,7 @@ func compareResponse(a Response, b Response) bool {
 	return true
 }
 
+// getUniqueNodes compare two responses and return the nodes that are similar
 func getUniqueNodes(a []Response, b []Response) {
 	result := make([]Response, 0, 11)
 	for _, v := range a {
@@ -90,6 +96,8 @@ func getUniqueNodes(a []Response, b []Response) {
 	}
 	fmt.Println(result) // [F5 F7 C6 G5]
 }
+
+// getDistinctNodes compares two response and returns the response in a that are not present in b
 func getDistinctNodes(a []Response, b []Response) []Response {
 	result := make([]Response, 0, 11)
 	for _, v := range a {
@@ -106,6 +114,7 @@ func getDistinctNodes(a []Response, b []Response) []Response {
 	return result
 }
 
+// getResponse calls the rest endpoint and store the response
 func getResponse(url string) []Response {
 	log.Printf("Processing %v\n", url)
 
@@ -113,29 +122,43 @@ func getResponse(url string) []Response {
 
 	request := gorequest.New()
 	_, body, _ := request.Get(url).EndStruct(&getRestResponse)
-	log.Printf("Body:\n%v\n", body)
+	log.Printf("Response:\n%v\n", body)
 	return getRestResponse
 }
 
+// NOT COMPLETELY IMPLEMENTED
 func openTunnels(nodes []Response) {
 	if len(nodes) > 0 {
-
+		log.Println("Opening new tunnels in the response that are following: ")
+		for _, node := range nodes {
+			node.print()
+		}
+	} else {
+		log.Println("No new tunnels to open.")
 	}
 }
 
+// NOT COMPLETELY IMPLEMENTED
 func closeTunnels(nodes []Response) {
 	if len(nodes) > 0 {
-
+		log.Println("Closing old tunnels that are not in the response that are following: ")
+		for _, node := range nodes {
+			node.print()
+		}
+	} else {
+		log.Println("No tunnels to close.")
 	}
 }
 
-// Main function
 func main() {
 	c := loadConfig("config.json")
-
 	url := buildURL(c)
+
 	startNodes := getResponse(url)
 	openTunnels(startNodes)
+	log.Println("Waiting for 1 minute till next request")
+	time.Sleep(time.Minute * 1)
+
 	for {
 		newNodes := getResponse(url)
 
@@ -153,5 +176,4 @@ func main() {
 		log.Println("Waiting for 1 minute till next request")
 		time.Sleep(time.Minute * 1)
 	}
-
 }
