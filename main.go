@@ -122,7 +122,7 @@ func getResponse(url string) []Response {
 
 	request := gorequest.New()
 	_, body, _ := request.Get(url).EndStruct(&getRestResponse)
-	log.Printf("Response:\n%v\n", body)
+	log.Printf("Response:\n%v\n", string(body))
 	return getRestResponse
 }
 
