@@ -122,6 +122,7 @@ func getResponse(url string) []Response {
 
 	request := gorequest.New()
 	_, body, _ := request.Get(url).EndStruct(&getRestResponse)
+
 	log.Printf("Response:\n%v\n", string(body))
 	return getRestResponse
 }
@@ -132,6 +133,12 @@ func openTunnels(nodes []Response) {
 		log.Println("Opening new tunnels in the response that are following: ")
 		for _, node := range nodes {
 			node.print()
+			if node.Direction == "reverse" {
+				log.Println("Opening reverse tunnel")
+
+			} else if node.Direction == "forward" {
+				log.Println("Opening reverse tunnel")
+			}
 		}
 	} else {
 		log.Println("No new tunnels to open.")
@@ -151,6 +158,10 @@ func closeTunnels(nodes []Response) {
 }
 
 func main() {
+	// out, err := exec.Command("echo", "Hamza").Output()
+	// if err != nil {
+	// 	log.Println(err)
+	// }
 	c := loadConfig("config.json")
 	url := buildURL(c)
 
