@@ -1,19 +1,24 @@
 package main
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"golang.org/x/crypto/ssh"
 )
 
 // Get default location of a private key
 func privateKeyPath() string {
-	return os.Getenv("HOME") + "/.ssh/id_rsa"
+	path := filepath.FromSlash("C:/Users/Sardard/.ssh/id_rsa")
+	return path
 }
 
 // Get private key for ssh authentication
@@ -33,15 +38,16 @@ func makeSshConfig(user, password string) (*ssh.ClientConfig, error) {
 	config := ssh.ClientConfig{
 		User: user,
 		Auth: []ssh.AuthMethod{
-			ssh.PublicKeys(key),
 			ssh.Password(password),
+			ssh.PublicKeys(key),
 		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
 	return &config, nil
 }
 
-// Handle local client connections and tunnel data to the remote serverq
+// Handle local client connections and tunnel data to the remote server
 // Will use io.Copy - http://golang.org/pkg/io/#Copy
 func handleClient(client net.Conn, remote net.Conn) {
 	defer client.Close()
@@ -67,8 +73,37 @@ func handleClient(client net.Conn, remote net.Conn) {
 
 	<-chDone
 }
+func getHostKey(host string) (ssh.PublicKey, error) {
+	file, err := os.Open(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
 
-func StartForward(node Response) {
+	scanner := bufio.NewScanner(file)
+	var hostKey ssh.PublicKey
+	for scanner.Scan() {
+		fields := strings.Split(scanner.Text(), " ")
+		if len(fields) != 3 {
+			continue
+		}
+		if strings.Contains(fields[0], host) {
+			var err error
+			hostKey, _, _, _, err = ssh.ParseAuthorizedKey(scanner.Bytes())
+			if err != nil {
+				return nil, errors.New(fmt.Sprintf("error parsing %q: %v", fields[2], err))
+			}
+			break
+		}
+	}
+
+	if hostKey == nil {
+		return nil, errors.New(fmt.Sprintf("no hostkey for %s", host))
+	}
+	return hostKey, nil
+}
+
+func StartForwardTunnel(node Response) {
 	// Connection settings
 	sshAddr := fmt.Sprintf("%v:%v", node.Server, node.Port)
 	localAddr := fmt.Sprintf("%v:%v", node.Target, node.SourcePort)
@@ -83,29 +118,34 @@ func StartForward(node Response) {
 	// Establish connection with SSH server
 	conn, err := ssh.Dial("tcp", sshAddr, cfg)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
-	defer conn.Close()
+	if conn != nil {
+		defer conn.Close()
 
-	// Establish connection with remote server
-	remote, err := conn.Dial("tcp", remoteAddr)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	// Start local server to forward traffic to remote connection
-	local, err := net.Listen("tcp", localAddr)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	defer local.Close()
-
-	// Handle incoming connections
-	for {
-		client, err := local.Accept()
+		// Establish connection with remote server
+		remote, err := conn.Dial("tcp", remoteAddr)
 		if err != nil {
 			log.Fatalln(err)
 		}
-		handleClient(client, remote)
+		if remote != nil {
+			// Start local server to forward traffic to remote connection
+			local, err := net.Listen("tcp", localAddr)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			if local != nil {
+				defer local.Close()
+
+				// Handle incoming connections
+				for {
+					client, err := local.Accept()
+					if err != nil {
+						log.Println(err)
+					}
+					handleClient(client, remote)
+				}
+			}
+		}
 	}
 }

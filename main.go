@@ -141,7 +141,7 @@ func openTunnels(nodes []Response) {
 		}
 		for _, node := range nodes {
 			if node.Direction == "forward" {
-				log.Println("Connection Saved")
+				go StartForwardTunnel(node)
 			}
 		}
 	} else {
