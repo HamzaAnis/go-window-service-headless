@@ -141,7 +141,10 @@ func openTunnels(nodes []Response) {
 		log.Println("Opening new tunnels in the response that are following: ")
 		for _, node := range nodes {
 			node.print()
-			connections[node.ToString()] = openForwarPort(node)
+			if node.Direction == "forward" {
+				connections[node.ToString()] = openForwarPort(node)
+				log.Println("Connection Saved")
+			}
 		}
 	} else {
 		log.Println("No new tunnels to open.")
@@ -161,6 +164,7 @@ func closeTunnels(nodes []Response) {
 }
 
 func main() {
+	connections = make(map[string]*sshtun.SSHTun)
 	c := loadConfig("config.json")
 	url := buildURL(c)
 

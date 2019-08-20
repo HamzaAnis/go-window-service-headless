@@ -13,6 +13,7 @@ func openForwarPort(node Response) *sshtun.SSHTun {
 
 	sshTun.SetUser(node.User)
 	sshTun.SetPassword(node.Password)
+	// sshTun.SetRemoteHost(node.Server)
 
 	// We enable debug messages to see what happens
 	sshTun.SetDebug(true)
@@ -21,11 +22,11 @@ func openForwarPort(node Response) *sshtun.SSHTun {
 	sshTun.SetConnState(func(tun *sshtun.SSHTun, state sshtun.ConnState) {
 		switch state {
 		case sshtun.StateStarting:
-			log.Printf("STATE is Starting\n")
+			log.Printf("%v is Starting\n", node.ToString())
 		case sshtun.StateStarted:
-			log.Printf("STATE is Started\n")
+			log.Printf("%v is Started\n", node.ToString())
 		case sshtun.StateStopped:
-			log.Printf("STATE is Stopped\n")
+			log.Printf("%v is Stopped\n", node.ToString())
 		}
 	})
 
