@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -12,7 +11,10 @@ import (
 	"time"
 
 	"github.com/parnurzeal/gorequest"
+	"github.com/rgzr/sshtun"
 )
+
+var connections map[string]*sshtun.SSHTun
 
 // Config store the config variables
 type Config struct {
@@ -35,6 +37,11 @@ type Response struct {
 
 func (r *Response) print() {
 	log.Printf("\nServer: %v\nPort: %v\nUser: %v\nPassword: %v\nDirection: %v\nTarget: %v\nTargetPort: %v\nSourcePort: %v\n\n", r.Server, r.Port, r.User, r.Password, r.Direction, r.Target, r.TargetPort, r.SourcePort)
+}
+
+// ToString returns the string form of response
+func (r *Response) ToString() string {
+	return fmt.Sprintf("%v:%v:%v:%v:%v:%v:%v:%v", r.Server, r.Port, r.User, r.Password, r.Direction, r.Target, r.TargetPort, r.SourcePort)
 }
 
 // loadConfig loads reads the configuration file
@@ -130,12 +137,11 @@ func getResponse(url string) []Response {
 
 // NOT COMPLETELY IMPLEMENTED
 func openTunnels(nodes []Response) {
-	ctx := context.Background()
-
 	if len(nodes) > 0 {
 		log.Println("Opening new tunnels in the response that are following: ")
 		for _, node := range nodes {
 			node.print()
+			connections[node.ToString()] = openForwarPort(node)
 		}
 	} else {
 		log.Println("No new tunnels to open.")
@@ -155,7 +161,6 @@ func closeTunnels(nodes []Response) {
 }
 
 func main() {
-	Check()
 	c := loadConfig("config.json")
 	url := buildURL(c)
 
