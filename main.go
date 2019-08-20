@@ -151,6 +151,7 @@ func closeTunnels(nodes []Response) {
 }
 
 func main() {
+	Check()
 	c := loadConfig("config.json")
 	url := buildURL(c)
 
