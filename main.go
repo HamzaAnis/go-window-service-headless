@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/url"
+	"os/exec"
 	"strconv"
 	"time"
 
@@ -122,16 +124,56 @@ func getResponse(url string) []Response {
 
 	request := gorequest.New()
 	_, body, _ := request.Get(url).EndStruct(&getRestResponse)
+
 	log.Printf("Response:\n%v\n", string(body))
 	return getRestResponse
 }
 
 // NOT COMPLETELY IMPLEMENTED
 func openTunnels(nodes []Response) {
+	ctx := context.Background()
+
 	if len(nodes) > 0 {
 		log.Println("Opening new tunnels in the response that are following: ")
 		for _, node := range nodes {
 			node.print()
+
+			flag := "-R"
+
+			commandString := fmt.Sprintf("%v:%v:%v %v@%v", node.SourcePort, node.Target, node.TargetPort, node.User, node.Server)
+			if node.Direction == "reverse" {
+				log.Printf("Opening reverse tunnel %v\n", commandString)
+				flag = "-R"
+
+			} else if node.Direction == "forward" {
+				log.Printf("Opening forward tunnel %v\n", commandString)
+				flag = "-L"
+			}
+			check := fmt.Sprintf("ssh %v %v:%v:%v %v@%v", flag, node.SourcePort, node.Target, node.TargetPort, node.User, node.Server)
+
+			args := []string{flag, commandString, "-N"}
+
+			cmd := exec.CommandContext(ctx, "ssh", args...)
+
+			log.Println("It is " + cmd.Path)
+			// stdin, err := cmd.StdinPipe()
+			// if err != nil {
+			// 	log.Fatal(err)
+			// }
+
+			// go func() {
+			// 	defer stdin.Close()
+			// 	io.WriteString(stdin, node.Password)
+			// }()
+
+			out, err := cmd.CombinedOutput()
+			if err != nil {
+				log.Print("WOW   ")
+				log.Println(err)
+			}
+			log.Println(string(out))
+			log.Println(check)
+
 		}
 	} else {
 		log.Println("No new tunnels to open.")
