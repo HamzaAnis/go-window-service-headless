@@ -1,3 +1,4 @@
+// https://sosedoff.com/2015/05/25/ssh-port-forwarding-with-go.html
 package main
 
 import (
@@ -119,6 +120,8 @@ func StartForwardTunnel(node Response) {
 	conn, err := ssh.Dial("tcp", sshAddr, cfg)
 	if err != nil {
 		log.Println(err)
+		log.Println(node.ToString())
+
 	}
 	if conn != nil {
 		defer conn.Close()
@@ -126,13 +129,15 @@ func StartForwardTunnel(node Response) {
 		// Establish connection with remote server
 		remote, err := conn.Dial("tcp", remoteAddr)
 		if err != nil {
-			log.Fatalln(err)
+			log.Println(node.ToString())
+			log.Println(err)
 		}
 		if remote != nil {
 			// Start local server to forward traffic to remote connection
 			local, err := net.Listen("tcp", localAddr)
 			if err != nil {
-				log.Fatalln(err)
+				log.Println(node.ToString())
+				log.Println(err)
 			}
 			if local != nil {
 				defer local.Close()
@@ -141,6 +146,7 @@ func StartForwardTunnel(node Response) {
 				for {
 					client, err := local.Accept()
 					if err != nil {
+						log.Println(node.ToString())
 						log.Println(err)
 					}
 					handleClient(client, remote)

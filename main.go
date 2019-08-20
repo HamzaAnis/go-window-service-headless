@@ -13,11 +13,16 @@ import (
 	"github.com/parnurzeal/gorequest"
 )
 
+var (
+	c Config
+)
+
 // Config store the config variables
 type Config struct {
-	URL    string `json:"url"`
-	Ports  int64  `json:"ports"`
-	APIKey string `json:"apiKey"`
+	URL        string `json:"url"`
+	Ports      int64  `json:"ports"`
+	APIKey     string `json:"apiKey"`
+	SSHKeyPath string `json:"sshKeyPath"`
 }
 
 // Response store the response of the endpoint
@@ -38,7 +43,14 @@ func (r *Response) print() {
 
 // ToString returns the string form of response
 func (r *Response) ToString() string {
-	return fmt.Sprintf("%v:%v:%v:%v:%v:%v:%v:%v", r.Server, r.Port, r.User, r.Password, r.Direction, r.Target, r.TargetPort, r.SourcePort)
+	flag := "-R"
+	if r.Direction == "reverse" {
+		flag = "-R"
+	} else if r.Direction == "forward" {
+		flag = "-L"
+	}
+	return fmt.Sprintf("ssh %v %v:%v:%v %v@%v -N", flag, r.SourcePort, r.Target, r.TargetPort, r.User, r.Server)
+
 }
 
 // loadConfig loads reads the configuration file
@@ -132,7 +144,6 @@ func getResponse(url string) []Response {
 	return getRestResponse
 }
 
-// NOT COMPLETELY IMPLEMENTED
 func openTunnels(nodes []Response) {
 	if len(nodes) > 0 {
 		log.Println("Opening new tunnels in the response that are following: ")
@@ -142,6 +153,8 @@ func openTunnels(nodes []Response) {
 		for _, node := range nodes {
 			if node.Direction == "forward" {
 				go StartForwardTunnel(node)
+			} else if node.Direction == "reverse" {
+				go StartReverse(node)
 			}
 		}
 	} else {
@@ -149,7 +162,6 @@ func openTunnels(nodes []Response) {
 	}
 }
 
-// NOT COMPLETELY IMPLEMENTED
 func closeTunnels(nodes []Response) {
 	if len(nodes) > 0 {
 		log.Println("Closing old tunnels that are not in the response that are following: ")
@@ -162,7 +174,7 @@ func closeTunnels(nodes []Response) {
 }
 
 func main() {
-	c := loadConfig("config.json")
+	c = loadConfig("config.json")
 	url := buildURL(c)
 
 	startNodes := getResponse(url)
