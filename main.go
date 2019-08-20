@@ -11,10 +11,7 @@ import (
 	"time"
 
 	"github.com/parnurzeal/gorequest"
-	"github.com/rgzr/sshtun"
 )
-
-var connections map[string]*sshtun.SSHTun
 
 // Config store the config variables
 type Config struct {
@@ -144,7 +141,6 @@ func openTunnels(nodes []Response) {
 		}
 		for _, node := range nodes {
 			if node.Direction == "forward" {
-				connections[node.ToString()] = openForwarPort(node)
 				log.Println("Connection Saved")
 			}
 		}
@@ -166,7 +162,6 @@ func closeTunnels(nodes []Response) {
 }
 
 func main() {
-	connections = make(map[string]*sshtun.SSHTun)
 	c := loadConfig("config.json")
 	url := buildURL(c)
 
