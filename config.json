@@ -1,5 +1,6 @@
 {
     "url": "https://public.nsplice.com/",
     "ports": 8000,
-    "apiKey": "some_long_string"
+    "apiKey": "some_long_string",
+    "sshKeyPath": "C:/Users/Sardard/.ssh/id_rsa"
 }
