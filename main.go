@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/url"
+	"os/exec"
 	"strconv"
 	"time"
 
@@ -129,16 +131,49 @@ func getResponse(url string) []Response {
 
 // NOT COMPLETELY IMPLEMENTED
 func openTunnels(nodes []Response) {
+	ctx := context.Background()
+
 	if len(nodes) > 0 {
 		log.Println("Opening new tunnels in the response that are following: ")
 		for _, node := range nodes {
 			node.print()
+
+			flag := "-R"
+
+			commandString := fmt.Sprintf("%v:%v:%v %v@%v", node.SourcePort, node.Target, node.TargetPort, node.User, node.Server)
 			if node.Direction == "reverse" {
-				log.Println("Opening reverse tunnel")
+				log.Printf("Opening reverse tunnel %v\n", commandString)
+				flag = "-R"
 
 			} else if node.Direction == "forward" {
-				log.Println("Opening reverse tunnel")
+				log.Printf("Opening forward tunnel %v\n", commandString)
+				flag = "-L"
 			}
+			check := fmt.Sprintf("ssh %v %v:%v:%v %v@%v", flag, node.SourcePort, node.Target, node.TargetPort, node.User, node.Server)
+
+			args := []string{flag, commandString, "-N"}
+
+			cmd := exec.CommandContext(ctx, "ssh", args...)
+
+			log.Println("It is " + cmd.Path)
+			// stdin, err := cmd.StdinPipe()
+			// if err != nil {
+			// 	log.Fatal(err)
+			// }
+
+			// go func() {
+			// 	defer stdin.Close()
+			// 	io.WriteString(stdin, node.Password)
+			// }()
+
+			out, err := cmd.CombinedOutput()
+			if err != nil {
+				log.Print("WOW   ")
+				log.Println(err)
+			}
+			log.Println(string(out))
+			log.Println(check)
+
 		}
 	} else {
 		log.Println("No new tunnels to open.")
@@ -158,10 +193,7 @@ func closeTunnels(nodes []Response) {
 }
 
 func main() {
-	// out, err := exec.Command("echo", "Hamza").Output()
-	// if err != nil {
-	// 	log.Println(err)
-	// }
+
 	c := loadConfig("config.json")
 	url := buildURL(c)
 
