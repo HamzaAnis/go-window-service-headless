@@ -141,6 +141,8 @@ func openTunnels(nodes []Response) {
 		log.Println("Opening new tunnels in the response that are following: ")
 		for _, node := range nodes {
 			node.print()
+		}
+		for _, node := range nodes {
 			if node.Direction == "forward" {
 				connections[node.ToString()] = openForwarPort(node)
 				log.Println("Connection Saved")

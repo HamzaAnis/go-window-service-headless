@@ -8,12 +8,11 @@ import (
 )
 
 func openForwarPort(node Response) *sshtun.SSHTun {
-	// We want to connect to port 8080 on our machine to access port 80 on my.super.host.com
 	sshTun := sshtun.New(int(node.SourcePort), node.Server, int(node.TargetPort))
 
 	sshTun.SetUser(node.User)
 	sshTun.SetPassword(node.Password)
-	// sshTun.SetRemoteHost(node.Server)
+	sshTun.SetRemoteHost(node.Server)
 
 	// We enable debug messages to see what happens
 	sshTun.SetDebug(true)
