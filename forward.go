@@ -17,7 +17,7 @@ import (
 
 // Get default location of a private key
 func privateKeyPath() string {
-	path := filepath.FromSlash("C:/Users/Sardard/.ssh/id_rsa")
+	path := filepath.FromSlash(c.SSHKeyPath)
 	return path
 }
 
