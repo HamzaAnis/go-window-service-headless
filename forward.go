@@ -1,157 +1,36 @@
-// https://sosedoff.com/2015/05/25/ssh-port-forwarding-with-go.html
+// https://stackoverflow.com/a/23167416
 package main
 
 import (
-	"bufio"
-	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
-	"net"
 	"os"
-	"path/filepath"
-	"strings"
-
-	"golang.org/x/crypto/ssh"
+	"os/exec"
 )
 
-// Get default location of a private key
-func privateKeyPath() string {
-	path := filepath.FromSlash(c.SSHKeyPath)
-	return path
-}
-
-// Get private key for ssh authentication
-func parsePrivateKey(keyPath string) (ssh.Signer, error) {
-	buff, _ := ioutil.ReadFile(keyPath)
-	return ssh.ParsePrivateKey(buff)
-}
-
-// Get ssh client config for our connection
-// SSH config will use 2 authentication strategies: by key and by password
-func makeSshConfig(user, password string) (*ssh.ClientConfig, error) {
-	key, err := parsePrivateKey(privateKeyPath())
-	if err != nil {
-		return nil, err
-	}
-
-	config := ssh.ClientConfig{
-		User: user,
-		Auth: []ssh.AuthMethod{
-			ssh.Password(password),
-			ssh.PublicKeys(key),
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-
-	return &config, nil
-}
-
-// Handle local client connections and tunnel data to the remote server
-// Will use io.Copy - http://golang.org/pkg/io/#Copy
-func handleClient(client net.Conn, remote net.Conn) {
-	defer client.Close()
-	chDone := make(chan bool)
-
-	// Start remote -> local data transfer
-	go func() {
-		_, err := io.Copy(client, remote)
-		if err != nil {
-			log.Println("error while copy remote->local:", err)
-		}
-		chDone <- true
-	}()
-
-	// Start local -> remote data transfer
-	go func() {
-		_, err := io.Copy(remote, client)
-		if err != nil {
-			log.Println(err)
-		}
-		chDone <- true
-	}()
-
-	<-chDone
-}
-func getHostKey(host string) (ssh.PublicKey, error) {
-	file, err := os.Open(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	var hostKey ssh.PublicKey
-	for scanner.Scan() {
-		fields := strings.Split(scanner.Text(), " ")
-		if len(fields) != 3 {
-			continue
-		}
-		if strings.Contains(fields[0], host) {
-			var err error
-			hostKey, _, _, _, err = ssh.ParseAuthorizedKey(scanner.Bytes())
-			if err != nil {
-				return nil, errors.New(fmt.Sprintf("error parsing %q: %v", fields[2], err))
-			}
-			break
-		}
-	}
-
-	if hostKey == nil {
-		return nil, errors.New(fmt.Sprintf("no hostkey for %s", host))
-	}
-	return hostKey, nil
-}
-
 func StartForwardTunnel(node Response) {
-	// Connection settings
-	sshAddr := fmt.Sprintf("%v:%v", node.Server, node.Port)
-	localAddr := fmt.Sprintf("%v:%v", node.Target, node.SourcePort)
-	remoteAddr := fmt.Sprintf("%v:%v", node.Target, node.TargetPort)
+	addr := fmt.Sprintf("%v:%v:%v", node.SourcePort, node.Target, node.TargetPort)
+	host := fmt.Sprintf("%v@%v", node.User, node.Server)
 
-	// Build SSH client configuration
-	cfg, err := makeSshConfig(node.User, node.Password)
+	subProcess := exec.Command("plink.exe", "-ssh", "-N", "-pw", node.Password, "-L", addr, host) //Just for testing, replace with your subProcess
+
+	stdin, err := subProcess.StdinPipe()
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println(err) //replace with logger, or anything you want
 	}
+	defer stdin.Close() // the doc says subProcess.Wait will close it, but I'm not sure, so I kept this line
 
-	// Establish connection with SSH server
-	conn, err := ssh.Dial("tcp", sshAddr, cfg)
-	if err != nil {
-		log.Println(err)
-		log.Println(node.ToString())
+	subProcess.Stdout = os.Stdout
+	subProcess.Stderr = os.Stderr
 
+	log.Println(node.ToString())
+	if err = subProcess.Start(); err != nil { //Use start, not run
+		fmt.Println("An error occured: ", err) //replace with logger, or anything you want
 	}
-	if conn != nil {
-		defer conn.Close()
+	io.WriteString(stdin, "y\r\ny\r\ny\r\n")
+	io.WriteString(stdin, "y\r\ny\r\ny\r\n")
+	io.WriteString(stdin, "y\r\ny\r\ny\r\n")
 
-		// Establish connection with remote server
-		remote, err := conn.Dial("tcp", remoteAddr)
-		if err != nil {
-			log.Println(node.ToString())
-			log.Println(err)
-		}
-		if remote != nil {
-			// Start local server to forward traffic to remote connection
-			local, err := net.Listen("tcp", localAddr)
-			if err != nil {
-				log.Println(node.ToString())
-				log.Println(err)
-			}
-			if local != nil {
-				defer local.Close()
-
-				// Handle incoming connections
-				for {
-					client, err := local.Accept()
-					if err != nil {
-						log.Println(node.ToString())
-						log.Println(err)
-					}
-					handleClient(client, remote)
-				}
-			}
-		}
-	}
+	subProcess.Wait()
 }
