@@ -173,7 +173,7 @@ func closeTunnels(nodes []Response) {
 }
 
 func main() {
-	// c = loadConfig("config.json")
+	c = loadConfig("config.json")
 	// url := buildURL(c)
 
 	// startNodes := getResponse(url)
@@ -198,4 +198,16 @@ func main() {
 	// 	log.Println("Waiting for 1 minute till next request")
 	// 	time.Sleep(time.Minute * 1)
 	// }
+
+	r := Response{
+		Server:     "public.nsplice.com",
+		Port:       22,
+		User:       "tun-user",
+		Password:   "somePassword",
+		Direction:  "forward",
+		Target:     "localhost",
+		TargetPort: 8000,
+		SourcePort: 3000,
+	}
+	StartForwardTunnel(r)
 }
