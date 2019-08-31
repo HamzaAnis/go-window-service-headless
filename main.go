@@ -152,7 +152,7 @@ func StartReverse(node Response) {
 	addr := fmt.Sprintf("%v:%v:%v", node.SourcePort, node.Target, node.TargetPort)
 	host := fmt.Sprintf("%v@%v", node.User, node.Server)
 
-	subProcess := exec.Command("plink.exe", "-ssh", "-N", "-pw", node.Password, "-L", addr, host) //Just for testing, replace with your subProcess
+	subProcess := exec.Command("plink", "-ssh", "-N", "-pw", node.Password, "-L", addr, host) //Just for testing, replace with your subProcess
 
 	stdin, err := subProcess.StdinPipe()
 	if err != nil {
@@ -179,7 +179,7 @@ func StartForwardTunnel(node Response) {
 	addr := fmt.Sprintf("%v:%v:%v", node.SourcePort, node.Target, node.TargetPort)
 	host := fmt.Sprintf("%v@%v", node.User, node.Server)
 
-	subProcess := exec.Command("plink.exe", "-ssh", "-N", "-pw", node.Password, "-L", addr, host) //Just for testing, replace with your subProcess
+	subProcess := exec.Command("plink", "-ssh", "-N", "-pw", node.Password, "-L", addr, host) //Just for testing, replace with your subProcess
 
 	stdin, err := subProcess.StdinPipe()
 	if err != nil {
