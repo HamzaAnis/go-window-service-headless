@@ -3,11 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/url"
+	"os"
+	"os/exec"
 	"strconv"
+	"time"
 
 	"github.com/parnurzeal/gorequest"
 )
@@ -143,6 +147,60 @@ func getResponse(url string) []Response {
 	return getRestResponse
 }
 
+// StartReverse opens reverse tunnel
+func StartReverse(node Response) {
+	addr := fmt.Sprintf("%v:%v:%v", node.SourcePort, node.Target, node.TargetPort)
+	host := fmt.Sprintf("%v@%v", node.User, node.Server)
+
+	subProcess := exec.Command("plink.exe", "-ssh", "-N", "-pw", node.Password, "-L", addr, host) //Just for testing, replace with your subProcess
+
+	stdin, err := subProcess.StdinPipe()
+	if err != nil {
+		fmt.Println(err) //replace with logger, or anything you want
+	}
+	defer stdin.Close() // the doc says subProcess.Wait will close it, but I'm not sure, so I kept this line
+
+	subProcess.Stdout = os.Stdout
+	subProcess.Stderr = os.Stderr
+
+	log.Println(node.ToString())
+	if err = subProcess.Start(); err != nil { //Use start, not run
+		log.Println("An error occured: ", err) //replace with logger, or anything you want
+	}
+	io.WriteString(stdin, "y\r\ny\r\ny\r\n")
+	io.WriteString(stdin, "y\r\ny\r\ny\r\n")
+	io.WriteString(stdin, "y\r\ny\r\ny\r\n")
+
+	subProcess.Wait()
+}
+
+// StartForwardTunnel opens forward tunnel
+func StartForwardTunnel(node Response) {
+	addr := fmt.Sprintf("%v:%v:%v", node.SourcePort, node.Target, node.TargetPort)
+	host := fmt.Sprintf("%v@%v", node.User, node.Server)
+
+	subProcess := exec.Command("plink.exe", "-ssh", "-N", "-pw", node.Password, "-L", addr, host) //Just for testing, replace with your subProcess
+
+	stdin, err := subProcess.StdinPipe()
+	if err != nil {
+		fmt.Println(err) //replace with logger, or anything you want
+	}
+	defer stdin.Close() // the doc says subProcess.Wait will close it, but I'm not sure, so I kept this line
+
+	subProcess.Stdout = os.Stdout
+	subProcess.Stderr = os.Stderr
+
+	log.Println(node.ToString())
+	if err = subProcess.Start(); err != nil { //Use start, not run
+		log.Println("An error occured: ", err)
+	}
+	io.WriteString(stdin, "y\r\ny\r\ny\r\n")
+	io.WriteString(stdin, "y\r\ny\r\ny\r\n")
+	io.WriteString(stdin, "y\r\ny\r\ny\r\n")
+
+	subProcess.Wait()
+}
+
 func openTunnels(nodes []Response) {
 	if len(nodes) > 0 {
 		log.Println("Opening new tunnels in the response that are following: ")
@@ -174,40 +232,40 @@ func closeTunnels(nodes []Response) {
 
 func main() {
 	c = loadConfig("config.json")
-	// url := buildURL(c)
+	url := buildURL(c)
 
-	// startNodes := getResponse(url)
-	// openTunnels(startNodes)
-	// log.Println("Waiting for 1 minute till next request")
-	// time.Sleep(time.Minute * 1)
+	startNodes := getResponse(url)
+	openTunnels(startNodes)
+	log.Println("Waiting for 1 minute till next request")
+	time.Sleep(time.Minute * 1)
 
-	// for {
-	// 	newNodes := getResponse(url)
+	for {
+		newNodes := getResponse(url)
 
-	// 	// Getting the nodes that are new
-	// 	distinctNodes := getDistinctNodes(newNodes, startNodes)
-	// 	openTunnels(distinctNodes)
+		// Getting the nodes that are new
+		distinctNodes := getDistinctNodes(newNodes, startNodes)
+		openTunnels(distinctNodes)
 
-	// 	// Getting the nodes that are not present
-	// 	closedNodes := getDistinctNodes(startNodes, newNodes)
-	// 	closeTunnels(closedNodes)
+		// Getting the nodes that are not present
+		closedNodes := getDistinctNodes(startNodes, newNodes)
+		closeTunnels(closedNodes)
 
-	// 	// Updating start nodes to the new nodes
-	// 	startNodes = newNodes
+		// Updating start nodes to the new nodes
+		startNodes = newNodes
 
-	// 	log.Println("Waiting for 1 minute till next request")
-	// 	time.Sleep(time.Minute * 1)
-	// }
-
-	r := Response{
-		Server:     "public.nsplice.com",
-		Port:       22,
-		User:       "tun-user",
-		Password:   "somePassword",
-		Direction:  "forward",
-		Target:     "localhost",
-		TargetPort: 8000,
-		SourcePort: 3000,
+		log.Println("Waiting for 1 minute till next request")
+		time.Sleep(time.Minute * 1)
 	}
-	StartForwardTunnel(r)
+
+	// r := Response{
+	// 	Server:     "public.nsplice.com",
+	// 	Port:       22,
+	// 	User:       "tun-user",
+	// 	Password:   "somePassword",
+	// 	Direction:  "forward",
+	// 	Target:     "localhost",
+	// 	TargetPort: 8000,
+	// 	SourcePort: 3000,
+	// }
+	// StartForwardTunnel(r)
 }
