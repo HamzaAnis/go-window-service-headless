@@ -23,7 +23,9 @@ func main() {
 	if err = subProcess.Start(); err != nil { //Use start, not run
 		fmt.Println("An error occured: ", err) //replace with logger, or anything you want
 	}
-	io.WriteString(stdin, "\n")
+	io.WriteString(stdin, "yes\n")
+	io.WriteString(stdin, "yes\n")
+	io.WriteString(stdin, "yes\n")
 
 	subProcess.Wait()
 	fmt.Println("END") //for debug
