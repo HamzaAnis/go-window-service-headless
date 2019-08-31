@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/url"
 	"strconv"
-	"time"
 
 	"github.com/parnurzeal/gorequest"
 )
@@ -174,29 +173,29 @@ func closeTunnels(nodes []Response) {
 }
 
 func main() {
-	c = loadConfig("config.json")
-	url := buildURL(c)
+	// c = loadConfig("config.json")
+	// url := buildURL(c)
 
-	startNodes := getResponse(url)
-	openTunnels(startNodes)
-	log.Println("Waiting for 1 minute till next request")
-	time.Sleep(time.Minute * 1)
+	// startNodes := getResponse(url)
+	// openTunnels(startNodes)
+	// log.Println("Waiting for 1 minute till next request")
+	// time.Sleep(time.Minute * 1)
 
-	for {
-		newNodes := getResponse(url)
+	// for {
+	// 	newNodes := getResponse(url)
 
-		// Getting the nodes that are new
-		distinctNodes := getDistinctNodes(newNodes, startNodes)
-		openTunnels(distinctNodes)
+	// 	// Getting the nodes that are new
+	// 	distinctNodes := getDistinctNodes(newNodes, startNodes)
+	// 	openTunnels(distinctNodes)
 
-		// Getting the nodes that are not present
-		closedNodes := getDistinctNodes(startNodes, newNodes)
-		closeTunnels(closedNodes)
+	// 	// Getting the nodes that are not present
+	// 	closedNodes := getDistinctNodes(startNodes, newNodes)
+	// 	closeTunnels(closedNodes)
 
-		// Updating start nodes to the new nodes
-		startNodes = newNodes
+	// 	// Updating start nodes to the new nodes
+	// 	startNodes = newNodes
 
-		log.Println("Waiting for 1 minute till next request")
-		time.Sleep(time.Minute * 1)
-	}
+	// 	log.Println("Waiting for 1 minute till next request")
+	// 	time.Sleep(time.Minute * 1)
+	// }
 }
