@@ -147,12 +147,12 @@ func getResponse(url string) []Response {
 	return getRestResponse
 }
 
-// StartReverse opens reverse tunnel
-func StartReverse(node Response) {
+// StartReverseTunnel opens reverse tunnel
+func StartReverseTunnel(node Response) {
 	addr := fmt.Sprintf("%v:%v:%v", node.SourcePort, node.Target, node.TargetPort)
 	host := fmt.Sprintf("%v@%v", node.User, node.Server)
 
-	subProcess := exec.Command("plink", "-ssh", "-N", "-pw", node.Password, "-L", addr, host) //Just for testing, replace with your subProcess
+	subProcess := exec.Command("plink", "-ssh", "-N", "-pw", node.Password, "-R", addr, host) //Just for testing, replace with your subProcess
 
 	stdin, err := subProcess.StdinPipe()
 	if err != nil {
@@ -211,7 +211,7 @@ func openTunnels(nodes []Response) {
 			if node.Direction == "forward" {
 				go StartForwardTunnel(node)
 			} else if node.Direction == "reverse" {
-				go StartReverse(node)
+				go StartReverseTunnel(node)
 			}
 		}
 	} else {
