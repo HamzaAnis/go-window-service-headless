@@ -22,10 +22,9 @@ var (
 
 // Config store the config variables
 type Config struct {
-	URL        string `json:"url"`
-	Ports      int64  `json:"ports"`
-	APIKey     string `json:"apiKey"`
-	SSHKeyPath string `json:"sshKeyPath"`
+	URL    string `json:"url"`
+	Ports  int64  `json:"ports"`
+	APIKey string `json:"apiKey"`
 }
 
 // Response store the response of the endpoint
@@ -256,16 +255,4 @@ func main() {
 		log.Println("Waiting for 1 minute till next request")
 		time.Sleep(time.Minute * 1)
 	}
-
-	// r := Response{
-	// 	Server:     "public.nsplice.com",
-	// 	Port:       22,
-	// 	User:       "tun-user",
-	// 	Password:   "somePassword",
-	// 	Direction:  "forward",
-	// 	Target:     "localhost",
-	// 	TargetPort: 8000,
-	// 	SourcePort: 3000,
-	// }
-	// StartForwardTunnel(r)
 }
