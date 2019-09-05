@@ -239,6 +239,7 @@ func closeTunnels(nodes []Response) {
 	}
 }
 
+// To close all the tunnels on exit
 func closeAllTunnels() {
 	log.Println("Closing all the tunnels")
 	for _, pid := range pids {
@@ -246,6 +247,7 @@ func closeAllTunnels() {
 	}
 }
 
+// To handle the Ctrl+c interupt
 func exitHandler() {
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -257,7 +259,6 @@ func exitHandler() {
 }
 
 func main() {
-	fmt.Println("Line break is : ", LineBreak)
 	pids = make(map[string]*exec.Cmd)
 	go exitHandler()
 	c = loadConfig("config.json")
