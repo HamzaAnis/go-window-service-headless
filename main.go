@@ -10,7 +10,9 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/parnurzeal/gorequest"
@@ -228,8 +230,20 @@ func closeTunnels(nodes []Response) {
 		log.Println("No tunnels to close.")
 	}
 }
-
+func cleanup() {
+	log.Println("This is called")
+}
+func exitHandler() {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		cleanup()
+		os.Exit(1)
+	}()
+}
 func main() {
+	go exitHandler()
 	c = loadConfig("config.json")
 	url := buildURL(c)
 
