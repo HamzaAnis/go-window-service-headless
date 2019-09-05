@@ -222,6 +222,7 @@ func openTunnels(nodes []Response) {
 				go StartReverseTunnel(node)
 			}
 		}
+		time.Sleep(5 * time.Second)
 		closeAllTunnels()
 	} else {
 		log.Println("No new tunnels to open.")
@@ -240,9 +241,12 @@ func closeTunnels(nodes []Response) {
 }
 func closeAllTunnels() {
 	log.Println("This is called")
-	for key, value := range pids {
-		fmt.Println("Key: ", key)
-		fmt.Println("Value: ", value)
+	for _, pid := range pids {
+		if err := pid.Process.Kill(); err != nil {
+			log.Println("Failed to kill process: ", err)
+		} else {
+			log.Println("Process killed: ", err)
+		}
 	}
 }
 func exitHandler() {
