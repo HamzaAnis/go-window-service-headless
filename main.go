@@ -19,7 +19,8 @@ import (
 )
 
 var (
-	c Config
+	c    Config
+	pids map[string]*exec.Cmd
 )
 
 // Config store the config variables
@@ -154,7 +155,8 @@ func StartReverseTunnel(node Response) {
 	host := fmt.Sprintf("%v@%v", node.User, node.Server)
 
 	subProcess := exec.Command("plink", "-ssh", "-N", "-pw", node.Password, "-R", addr, host) //Just for testing, replace with your subProcess
-
+	// Saving subprocess to kill later
+	pids[node.ToString()] = subProcess
 	stdin, err := subProcess.StdinPipe()
 	if err != nil {
 		fmt.Println(err) //replace with logger, or anything you want
@@ -173,6 +175,7 @@ func StartReverseTunnel(node Response) {
 	io.WriteString(stdin, "y\r\ny\r\ny\r\n")
 
 	subProcess.Wait()
+
 }
 
 // StartForwardTunnel opens forward tunnel
@@ -181,6 +184,9 @@ func StartForwardTunnel(node Response) {
 	host := fmt.Sprintf("%v@%v", node.User, node.Server)
 
 	subProcess := exec.Command("plink", "-ssh", "-N", "-pw", node.Password, "-L", addr, host) //Just for testing, replace with your subProcess
+
+	// Saving subprocess to kill later
+	pids[node.ToString()] = subProcess
 
 	stdin, err := subProcess.StdinPipe()
 	if err != nil {
@@ -200,6 +206,7 @@ func StartForwardTunnel(node Response) {
 	io.WriteString(stdin, "y\r\ny\r\ny\r\n")
 
 	subProcess.Wait()
+
 }
 
 func openTunnels(nodes []Response) {
@@ -215,6 +222,7 @@ func openTunnels(nodes []Response) {
 				go StartReverseTunnel(node)
 			}
 		}
+		closeAllTunnels()
 	} else {
 		log.Println("No new tunnels to open.")
 	}
@@ -230,19 +238,24 @@ func closeTunnels(nodes []Response) {
 		log.Println("No tunnels to close.")
 	}
 }
-func cleanup() {
+func closeAllTunnels() {
 	log.Println("This is called")
+	for key, value := range pids {
+		fmt.Println("Key: ", key)
+		fmt.Println("Value: ", value)
+	}
 }
 func exitHandler() {
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		cleanup()
+		closeAllTunnels()
 		os.Exit(1)
 	}()
 }
 func main() {
+	pids = make(map[string]*exec.Cmd)
 	go exitHandler()
 	c = loadConfig("config.json")
 	url := buildURL(c)
