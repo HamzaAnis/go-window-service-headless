@@ -199,7 +199,7 @@ func StartForwardTunnel(node Response) {
 
 	log.Println(node.ToString())
 	if err = subProcess.Start(); err != nil { //Use start, not run
-		log.Println("An error occured: ", err)
+		log.Printf("An error occured while performing %v\n%v", node.ToString(), err)
 	}
 	io.WriteString(stdin, "y\r\ny\r\ny\r\n")
 	io.WriteString(stdin, "y\r\ny\r\ny\r\n")
@@ -222,8 +222,6 @@ func openTunnels(nodes []Response) {
 				go StartReverseTunnel(node)
 			}
 		}
-		time.Sleep(5 * time.Second)
-		closeAllTunnels()
 	} else {
 		log.Println("No new tunnels to open.")
 	}
@@ -234,21 +232,20 @@ func closeTunnels(nodes []Response) {
 		log.Println("Closing old tunnels that are not in the response that are following: ")
 		for _, node := range nodes {
 			node.print()
+			pids[node.ToString()].Process.Kill()
 		}
 	} else {
 		log.Println("No tunnels to close.")
 	}
 }
+
 func closeAllTunnels() {
-	log.Println("This is called")
+	log.Println("Closing all the tunnels")
 	for _, pid := range pids {
-		if err := pid.Process.Kill(); err != nil {
-			log.Println("Failed to kill process: ", err)
-		} else {
-			log.Println("Process killed: ", err)
-		}
+		pid.Process.Kill()
 	}
 }
+
 func exitHandler() {
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -258,7 +255,9 @@ func exitHandler() {
 		os.Exit(1)
 	}()
 }
+
 func main() {
+	fmt.Println("Line break is : ", LineBreak)
 	pids = make(map[string]*exec.Cmd)
 	go exitHandler()
 	c = loadConfig("config.json")
