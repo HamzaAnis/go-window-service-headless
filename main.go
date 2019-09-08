@@ -250,7 +250,15 @@ func closeAllTunnels() {
 // To handle the Ctrl+c interupt
 func exitHandler() {
 	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGKILL)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(c, os.Interrupt, syscall.SIGHUP)
+	signal.Notify(c, os.Interrupt, syscall.SIGQUIT)
+	signal.Notify(c, os.Interrupt, syscall.SIGINT)
+	signal.Notify(c, os.Interrupt)
+
+	signal.Notify(c, syscall.SIGINT, os.Interrupt)
+
 	go func() {
 		<-c
 		closeAllTunnels()
@@ -259,6 +267,7 @@ func exitHandler() {
 }
 
 func main() {
+	defer closeAllTunnels()
 	pids = make(map[string]*exec.Cmd)
 	go exitHandler()
 	c = loadConfig("config.json")
